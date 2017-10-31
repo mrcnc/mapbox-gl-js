@@ -26,28 +26,23 @@ function drawSymbols(painter: Painter, sourceCache: SourceCache, layer: SymbolSt
     painter.setDepthSublayer(0);
     painter.depthMask(false);
 
-    const isOpacityZero = (property: string) => {
-        return layer.isPaintValueFeatureConstant(property) &&
-            layer.getPaintValue(property, { zoom: painter.transform.zoom }) === 0;
-    };
-
-    if (!isOpacityZero('icon-opacity')) {
+    if (layer.paint.get('icon-opacity').constantOr(0) !== 0) {
         drawLayerSymbols(painter, sourceCache, layer, coords, false,
-            layer.paint['icon-translate'],
-            layer.paint['icon-translate-anchor'],
-            layer.layout['icon-rotation-alignment'],
-            layer.layout['icon-pitch-alignment'],
-            layer.layout['icon-keep-upright']
+            layer.paint.get('icon-translate'),
+            layer.paint.get('icon-translate-anchor'),
+            layer.layout.get('icon-rotation-alignment'),
+            layer.layout.get('icon-pitch-alignment'),
+            layer.layout.get('icon-keep-upright')
         );
     }
 
-    if (!isOpacityZero('text-opacity')) {
+    if (layer.paint.get('text-opacity').constantOr(0) !== 0) {
         drawLayerSymbols(painter, sourceCache, layer, coords, true,
-            layer.paint['text-translate'],
-            layer.paint['text-translate-anchor'],
-            layer.layout['text-rotation-alignment'],
-            layer.layout['text-pitch-alignment'],
-            layer.layout['text-keep-upright']
+            layer.paint.get('text-translate'),
+            layer.paint.get('text-translate-anchor'),
+            layer.layout.get('text-rotation-alignment'),
+            layer.layout.get('text-pitch-alignment'),
+            layer.layout.get('text-keep-upright')
         );
     }
 
@@ -64,7 +59,7 @@ function drawLayerSymbols(painter, sourceCache, layer, coords, isText, translate
 
     const rotateWithMap = rotationAlignment === 'map';
     const pitchWithMap = pitchAlignment === 'map';
-    const alongLine = rotateWithMap && layer.layout['symbol-placement'] === 'line';
+    const alongLine = rotateWithMap && layer.layout.get('symbol-placement') === 'line';
     // Line label rotation happens in `updateLineLabels`
     // Pitched point labels are automatically rotated by the labelPlaneMatrix projection
     // Unpitched point labels need to have their rotation applied after projection
@@ -106,10 +101,7 @@ function drawLayerSymbols(painter, sourceCache, layer, coords, isText, translate
             tile.glyphAtlasTexture.bind(gl.LINEAR, gl.CLAMP_TO_EDGE);
             gl.uniform2fv(program.uniforms.u_texsize, tile.glyphAtlasTexture.size);
         } else {
-            const iconScaled = !layer.isLayoutValueFeatureConstant('icon-size') ||
-                !layer.isLayoutValueZoomConstant('icon-size') ||
-                layer.getLayoutValue('icon-size', { zoom: tr.zoom }) !== 1 ||
-                bucket.iconsNeedLinear;
+            const iconScaled = layer.layout.get('icon-size').constantOr(0) !== 1 || bucket.iconsNeedLinear;
             const iconTransformed = pitchWithMap || tr.pitch !== 0;
 
             tile.iconAtlasTexture.bind(isSDF || painter.options.rotating || painter.options.zooming || iconScaled || iconTransformed ?
@@ -159,7 +151,7 @@ function setSymbolDrawState(program, painter, layer, isText, rotateInShader, pit
 
     gl.uniform1f(program.uniforms.u_camera_to_center_distance, tr.cameraToCenterDistance);
 
-    const size = symbolSize.evaluateSizeForZoom(sizeData, tr, layer, isText);
+    const size = symbolSize.evaluateSizeForZoom(sizeData, tr, layer.layout.get(isText ? 'text-size' : 'icon-size'));
     if (size.uSizeT !== undefined) gl.uniform1f(program.uniforms.u_size_t, size.uSizeT);
     if (size.uSize !== undefined) gl.uniform1f(program.uniforms.u_size, size.uSize);
 
@@ -173,8 +165,7 @@ function drawTileSymbols(program, programConfiguration, painter, layer, tile, bu
     const tr = painter.transform;
 
     if (isSDF) {
-        const haloWidthProperty = `${isText ? 'text' : 'icon'}-halo-width`;
-        const hasHalo = !layer.isPaintValueFeatureConstant(haloWidthProperty) || layer.paint[haloWidthProperty];
+        const hasHalo = layer.paint.get(`${isText ? 'text' : 'icon'}-halo-width`).constantOr(1) !== 0;
         const gammaScale = (pitchWithMap ? Math.cos(tr._pitch) * tr.cameraToCenterDistance : 1);
         gl.uniform1f(program.uniforms.u_gamma_scale, gammaScale);
 

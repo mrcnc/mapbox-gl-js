@@ -103,24 +103,24 @@ function createExpression(expression: mixed,
     return success({ evaluate, parsed });
 }
 
-type ConstantExpression = {
+export type ConstantExpression = {
     kind: 'constant',
     evaluate: (globals: GlobalProperties, feature?: Feature) => any
 };
 
-type SourceExpression = {
+export type SourceExpression = {
     kind: 'source',
     evaluate: (globals: GlobalProperties, feature?: Feature) => any,
 };
 
-type CameraExpression = {
+export type CameraExpression = {
     kind: 'camera',
     evaluate: (globals: GlobalProperties, feature?: Feature) => any,
     interpolationFactor: (input: number, lower: number, upper: number) => number,
     zoomStops: Array<number>
 };
 
-type CompositeExpression = {
+export type CompositeExpression = {
     kind: 'composite',
     evaluate: (globals: GlobalProperties, feature?: Feature) => any,
     interpolationFactor: (input: number, lower: number, upper: number) => number,

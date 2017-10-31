@@ -17,24 +17,6 @@ test('StyleLayer', (t) => {
     t.end();
 });
 
-test('StyleLayer#updatePaintTransition', (t) => {
-
-    t.test('updates paint transition', (t) => {
-        const layer = StyleLayer.create({
-            "id": "background",
-            "type": "background",
-            "paint": {
-                "background-color": "red"
-            }
-        });
-        layer.updatePaintTransition('background-color', [], {});
-        t.deepEqual(layer.getPaintValue('background-color'), new Color(1, 0, 0, 1));
-        t.end();
-    });
-
-    t.end();
-});
-
 test('StyleLayer#setPaintProperty', (t) => {
     t.test('sets new property value', (t) => {
         const layer = StyleLayer.create({
@@ -72,13 +54,13 @@ test('StyleLayer#setPaintProperty', (t) => {
                 "background-opacity": 1
             }
         });
-        layer.updatePaintTransitions([], {transition: false}, null, createAnimationLoop());
-        layer.setPaintProperty('background-color', null);
-        layer.updatePaintTransitions([], {transition: false}, null, createAnimationLoop());
 
-        t.deepEqual(layer.getPaintValue('background-color'), new Color(0, 0, 0, 1));
+        layer.setPaintProperty('background-color', null);
+        layer.updatePaintTransitions({transition: false});
+
+        t.deepEqual(layer.paint.get('background-color'), new Color(0, 0, 0, 1));
         t.equal(layer.getPaintProperty('background-color'), undefined);
-        t.equal(layer.getPaintValue('background-opacity'), 1);
+        t.equal(layer.paint.get('background-opacity'), 1);
         t.equal(layer.getPaintProperty('background-opacity'), 1);
 
         t.end();
@@ -125,7 +107,7 @@ test('StyleLayer#setPaintProperty', (t) => {
 
         layer.on('error', () => {
             t.equal(layer.getPaintProperty('background-opacity'), undefined);
-            t.equal(layer.getPaintValue('background-opacity'), 1);
+            t.equal(layer.paint.get('background-opacity'), 1);
             t.end();
         });
 
@@ -158,11 +140,11 @@ test('StyleLayer#setPaintProperty', (t) => {
         });
 
         layer.setPaintProperty('fill-outline-color', '#f00');
-        layer.updatePaintTransitions([], {transition: false}, null, createAnimationLoop());
-        t.deepEqual(layer.getPaintValue('fill-outline-color'), new Color(1, 0, 0, 1));
+        layer.updatePaintTransitions({transition: false});
+        t.deepEqual(layer.paint.get('fill-outline-color'), new Color(1, 0, 0, 1));
         layer.setPaintProperty('fill-outline-color', undefined);
-        layer.updatePaintTransitions([], {transition: false}, null, createAnimationLoop());
-        t.deepEqual(layer.getPaintValue('fill-outline-color'), new Color(0, 0, 1, 1));
+        layer.updatePaintTransitions({transition: false});
+        t.deepEqual(layer.paint.get('fill-outline-color'), new Color(0, 0, 1, 1));
 
         t.end();
     });
@@ -177,22 +159,19 @@ test('StyleLayer#setPaintProperty', (t) => {
             }
         });
 
-        const animationLoop = createAnimationLoop();
-
         // setup: set and then unset fill-outline-color so that, when we then try
         // to re-set it, StyleTransition#calculate() attempts interpolation
         layer.setPaintProperty('fill-outline-color', '#f00');
-        layer.updatePaintTransitions([], {transition: true}, null, animationLoop);
+        layer.updatePaintTransitions({transition: true});
         layer.setPaintProperty('fill-outline-color', undefined);
-        layer.updatePaintTransitions([], {transition: true}, null, animationLoop);
+        layer.updatePaintTransitions({transition: true});
 
         // re-set fill-outline-color and get its value, triggering the attempt
         // to interpolate between undefined and #f00
         layer.setPaintProperty('fill-outline-color', '#f00');
-        layer.updatePaintTransitions([], {transition: true}, null, animationLoop);
-        t.doesNotThrow(() => {
-            layer.getPaintValue('fill-outline-color');
-        });
+        layer.updatePaintTransitions({transition: true});
+        layer.paint.get('fill-outline-color');
+
         t.end();
     });
 
@@ -205,28 +184,6 @@ test('StyleLayer#setPaintProperty', (t) => {
         layer.setPaintProperty('background-color-transition', null);
 
         t.deepEqual(layer.getPaintProperty('background-color-transition'), null);
-        t.end();
-    });
-
-    test('StyleLayer#isPaintValueZoomConstant', (t) => {
-        t.test('is paint value zoom constant undefined', (t) => {
-            const layer = StyleLayer.create({
-                "id": "background",
-                "type": "fill",
-                "paint.blue": {
-                    "fill-color": "#8ccbf7",
-                    "fill-opacity": 1
-                },
-                "paint": {
-                    "fill-opacity": 0
-                }
-            });
-
-            t.equal(layer.isPaintValueZoomConstant('background-color'), true);
-
-            t.end();
-        });
-
         t.end();
     });
 
@@ -409,37 +366,6 @@ test('StyleLayer#serialize', (t) => {
         t.equal(layer.serialize().layout['text-transform'], 'uppercase');
         t.equal(layer.serialize().layout['text-size'], 20);
 
-        t.end();
-    });
-
-    t.end();
-});
-
-test('StyleLayer#getPaintValue', (t) => {
-    t.test('returns property default if the value is data-driven and no feature is provided', (t) => {
-        const layer = StyleLayer.create({
-            "type": "circle",
-            "paint": {
-                "circle-opacity": ["get", "opacity"]
-            }
-        });
-        layer.updatePaintTransitions({});
-        t.deepEqual(layer.getPaintValue("circle-opacity"), 1);
-        t.end();
-    });
-
-    t.end();
-});
-
-test('StyleLayer#getLayoutValue', (t) => {
-    t.test('returns property default if the value is data-driven and no feature is provided', (t) => {
-        const layer = StyleLayer.create({
-            "type": "symbol",
-            "layout": {
-                "icon-rotate": ["get", "rotate"]
-            }
-        });
-        t.deepEqual(layer.getLayoutValue("icon-rotate"), 0);
         t.end();
     });
 

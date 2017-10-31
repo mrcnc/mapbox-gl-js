@@ -1,23 +1,24 @@
 // @flow
 
 const pattern = require('./pattern');
+const {ProgramConfiguration} = require('../data/program_configuration');
 
 import type Painter from './painter';
 import type SourceCache from '../source/source_cache';
 import type BackgroundStyleLayer from '../style/style_layer/background_style_layer';
-import type Color from '../style-spec/util/color';
 
 module.exports = drawBackground;
 
 function drawBackground(painter: Painter, sourceCache: SourceCache, layer: BackgroundStyleLayer) {
-    if (layer.getPaintValue('background-opacity', { zoom: painter.transform.zoom }) === 0) return;
+    const color = layer.paint.get('background-color');
+    const opacity = layer.paint.get('background-opacity');
+
+    if (opacity === 0) return;
 
     const gl = painter.gl;
     const transform = painter.transform;
     const tileSize = transform.tileSize;
-    const color: Color = layer.paint['background-color'];
-    const image = layer.paint['background-pattern'];
-    const opacity = layer.paint['background-opacity'];
+    const image = layer.paint.get('background-pattern');
 
     const pass = (!image && color.a === 1 && opacity === 1) ? 'opaque' : 'translucent';
     if (painter.renderPass !== pass) return;
@@ -29,16 +30,17 @@ function drawBackground(painter: Painter, sourceCache: SourceCache, layer: Backg
     let program;
     if (image) {
         if (pattern.isPatternMissing(image, painter)) return;
-        program = painter.useProgram('fillPattern', painter.basicFillProgramConfiguration);
+        const configuration = ProgramConfiguration.forBackgroundPattern(opacity);
+        program = painter.useProgram('fillPattern', configuration);
+        configuration.setUniforms(gl, program, layer, {zoom: painter.transform.zoom});
         pattern.prepare(image, painter, program);
         painter.tileExtentPatternVAO.bind(gl, program, painter.tileExtentBuffer);
     } else {
-        program = painter.useProgram('fill', painter.basicFillProgramConfiguration);
-        gl.uniform4f(program.uniforms.u_color, color.r, color.g, color.b, color.a);
+        const configuration = ProgramConfiguration.forBackgroundColor(color, opacity);
+        program = painter.useProgram('fill', configuration);
+        configuration.setUniforms(gl, program, layer, {zoom: painter.transform.zoom});
         painter.tileExtentVAO.bind(gl, program, painter.tileExtentBuffer);
     }
-
-    gl.uniform1f(program.uniforms.u_opacity, opacity);
 
     const coords = transform.coveringTiles({tileSize});
 

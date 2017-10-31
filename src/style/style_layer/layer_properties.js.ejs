@@ -1,0 +1,52 @@
+<%
+  const type = locals.type;
+  const layoutProperties = locals.layoutProperties;
+  const paintProperties = locals.paintProperties;
+-%>
+// This file is generated. Edit build/generate-style-code.js, then run `node build/generate-style-code.js`.
+// @flow
+
+const {
+    NumberType,
+    BooleanType,
+    StringType,
+    ColorType,
+    array
+} = require('../../style-spec/expression/types');
+
+const {
+    DataConstantProperty,
+    DataDrivenProperty,
+    CrossFadedProperty,
+    HeatmapColorProperty
+} = require('../properties');
+
+const Color = require('../../style-spec/util/color');
+
+<% if (layoutProperties.length) { -%>
+export type LayoutProperties = {|
+<% for (const property of layoutProperties) { -%>
+    "<%= property.name %>": <%- propertyType(property) %>,
+<% } -%>
+|};
+
+const layout: LayoutProperties = {
+<% for (const property of layoutProperties) { -%>
+    "<%= property.name %>": <%- propertyValue(property) %>,
+<% } -%>
+};
+<% } -%>
+
+export type PaintProperties = {|
+<% for (const property of paintProperties) { -%>
+    "<%= property.name %>": <%- propertyType(property) %>,
+<% } -%>
+|};
+
+const paint: PaintProperties = {
+<% for (const property of paintProperties) { -%>
+    "<%= property.name %>": <%- propertyValue(property) %>,
+<% } -%>
+};
+
+module.exports = { paint<% if (layoutProperties.length) { %>, layout<% } %> };
