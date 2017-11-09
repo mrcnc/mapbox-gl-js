@@ -75,7 +75,16 @@ module.exports = {
 
     get devicePixelRatio() { return window.devicePixelRatio; },
 
-    supportsWebp: false
+    supportsWebp: false,
+
+    supportsEval: (function () {
+        try {
+            new Function('');
+            return true;
+        } catch (e) {
+            return false;
+        }
+    })()
 };
 
 const webpImgTest = window.document.createElement('img');
