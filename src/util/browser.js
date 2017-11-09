@@ -77,7 +77,7 @@ module.exports = {
 
     supportsWebp: false,
 
-    supportsEval: (function () {
+    supportsEval: false && (function () {
         try {
             new Function('');
             return true;
